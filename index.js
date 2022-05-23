@@ -44,6 +44,7 @@ async function run() {
         const orderCollection = client.db("bicycleStore").collection("orders")
         const userCollection = client.db("bicycleStore").collection("users")
         const paymentCollection = client.db("bicycleStore").collection("payment")
+        const reviewCollection = client.db("bicycleStore").collection("reviews")
 
         //user PUT for google
         app.put('/user/:email', async (req, res) => {
@@ -110,13 +111,16 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.json(result);
         });
-        // (GET) Get Order For Payment
-        app.get('/order/:id', verifyJWT, async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await orderCollection.findOne(query);
-            res.send(result);
-        })
+
+         //(POST) Post A Review 
+    app.post("/review", async (req, res) => {
+        reviewDetails = req.body;
+        console.log(reviewDetails);
+        const result = await reviewCollection.insertOne(reviewDetails);
+        res.json(result);
+      });
+
+        
 
          // (POST) Post For Payment
          app.post('/create-payment-intent',verifyJWT,async(req,res)=>{
@@ -131,7 +135,22 @@ async function run() {
               res.send({clientSecret: paymentIntent.client_secret});
         })
 
+        //(PATCH) Patch Order Data
+        app.patch('/order/:id', verifyJWT, async(req, res) =>{
+            const id  = req.params.id;
+            const payment = req.body;
+            const filter = {_id: ObjectId(id)};
+            const updatedDoc = {
+              $set: {
+                paid: true,
+                transactionId: payment.transactionId
+              }
+            }
       
+            const result = await paymentCollection.insertOne(payment);
+            const updatedBooking = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedBooking);
+          })
 
     }
     finally {
