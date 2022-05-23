@@ -1,9 +1,9 @@
 const express = require('express')
 require('dotenv').config()
 const app = express()
-const cors = require('cors')
+const cors = require('cors');
 var jwt = require('jsonwebtoken');
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -21,18 +21,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 //   client.close();
 // });
 
-function verifyJWT(req,res,next){
-    const authorization=req.headers.authorization
+function verifyJWT(req, res, next) {
+    const authorization = req.headers.authorization
     // console.log(authorization);
-    if(!authorization){
-        return res.status(401).send({message:"Unauthorized access"})
+    if (!authorization) {
+        return res.status(401).send({ message: "Unauthorized access" })
     }
-    const token=authorization.split(' ')[1]
-    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
-        if(err){
-            return res.status(403).send({message:"Not allow to access"})
+    const token = authorization.split(' ')[1]
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: "Not allow to access" })
         }
-        req.decoded=decoded
+        req.decoded = decoded
         next()
     })
 }
@@ -43,21 +43,22 @@ async function run() {
         const bicycleCollection = client.db("bicycleStore").collection("services")
         const orderCollection = client.db("bicycleStore").collection("orders")
         const userCollection = client.db("bicycleStore").collection("users")
+        const paymentCollection = client.db("bicycleStore").collection("payment")
 
-         //user PUT for google
-         app.put('/user/:email',async(req,res)=>{
-            const email=req.params.email
-            const user=req.body
-            const filter={email:email}
+        //user PUT for google
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
             const options = { upsert: true };
             const updateDoc = {
-                $set:user,
-              };
-              const result = await userCollection.updateOne(filter, updateDoc, options);
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
 
-              const token= jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
             //   console.log(result);
-              res.send({result,accessToken:token})
+            res.send({ result, accessToken: token });
         })
 
         //(GET) all product 
@@ -85,20 +86,20 @@ async function run() {
         });
 
         //(GET) Single user Orders
-        app.get("/orders",verifyJWT, async (req, res) => {
-            const email=req.query.email
-            const decodedEmail=req.decoded.email
-            if(email===decodedEmail){
+        app.get("/orders", verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email
+            if (email === decodedEmail) {
                 const query = { client: email };
-            const cursor = orderCollection.find(query);
-            const result = await cursor.toArray();
-            console.log(result);
-            return res.json(result);
-            }else{
+                const cursor = orderCollection.find(query);
+                const result = await cursor.toArray();
+                console.log(result);
+                return res.json(result);
+            } else {
 
-                return res.status(403).send({message:"Not allow to access"})
+                return res.status(403).send({ message: "Not allow to access" });
             }
-            
+
         });
 
         //(DELETE) DELETE Order
@@ -109,14 +110,29 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.json(result);
         });
-
-        // (GET) get order for payment
-        app.get('/booking/:id',verifyJWT,async(req,res)=>{
-            const id =req.params.id
-            const query={_id:ObjectId(id)}
-            const result=await bookingCollection.findOne(query);
-            res.send(result)
+        // (GET) Get Order For Payment
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.findOne(query);
+            res.send(result);
         })
+
+         // (POST) Post For Payment
+         app.post('/create-payment-intent',verifyJWT,async(req,res)=>{
+            const order=req.body;
+            const price=order.price;
+            const ammount=price*100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: ammount,
+                currency: "usd",
+                payment_method_types:['card'],
+              });
+              res.send({clientSecret: paymentIntent.client_secret});
+        })
+
+      
+
     }
     finally {
 
