@@ -120,7 +120,20 @@ async function run() {
         res.json(result);
       });
 
-        
+      //(GET) Show All Review
+    app.get("/review", async (req, res) => {
+        const cursor = reviewCollection.find();
+        const result = await cursor.toArray();
+        res.json(result);
+      });
+
+        // (GET) Get Order For Payment
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.findOne(query);
+            res.send(result);
+        })
 
          // (POST) Post For Payment
          app.post('/create-payment-intent',verifyJWT,async(req,res)=>{
