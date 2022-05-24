@@ -178,7 +178,27 @@ async function run() {
             const updatedUser = await userCollection.updateOne(filter, updatedDoc,options);
             res.send(updatedUser);
           })
+      
+          //(GET)Get all User
+          app.get("/user", async (req, res) => {
+            const cursor = userCollection.find();
+            const result = await cursor.toArray();
+            res.json(result);
+          });
 
+        //   (PUT)Put For Make an admin
+          app.put('/user/admin/:email',verifyJWT,async(req,res)=>{
+            const email=req.params.email
+
+                const filter={email:email}
+                const updateDoc = {
+                    $set:{role:'admin'},
+                  };
+                  const result = await userCollection.updateOne(filter, updateDoc);
+                //   console.log(result);
+             res.send(result);
+            
+        })
 
     }
     finally {
