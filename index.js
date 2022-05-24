@@ -21,6 +21,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 //   client.close();
 // });
 
+// VerifyJWT
 function verifyJWT(req, res, next) {
     const authorization = req.headers.authorization
     // console.log(authorization);
@@ -45,6 +46,19 @@ async function run() {
         const userCollection = client.db("bicycleStore").collection("users")
         const paymentCollection = client.db("bicycleStore").collection("payment")
         const reviewCollection = client.db("bicycleStore").collection("reviews")
+
+        // VerifyAdmin
+        const verifyAdmin=async(req,res,next)=>{
+            const requester=req.decoded.email
+            console.log(requester);
+            const requestAccount=await userCollection.findOne({email:requester})
+            if (requestAccount.role==='admin'){
+              next();
+            }
+            else{
+                return    res.status(403).send({message:"Forbiden Access"})
+                }
+        }
 
         //user PUT for google
         app.put('/user/:email', async (req, res) => {
@@ -200,6 +214,37 @@ async function run() {
             
         })
 
+        // (GET)Get A Admin
+        app.get('/useadmin/:email',async(req,res)=>{
+            const email=req.params.email;
+            const user=await userCollection.findOne({email:email});
+            const isAdmin=user.role==='admin';
+            res.send({admin:isAdmin});
+        })
+
+        // (POST)Post For Add Product
+        app.post('/addservice',verifyJWT,verifyAdmin,async(req,res)=>{
+            const product=req.body
+            const result=await bicycleCollection.insertOne(product)
+            res.send(result)
+        })
+
+        // (GET)Get For Manage All Product
+        app.get('/manageservice',verifyJWT,verifyAdmin,async(req,res)=>{
+           
+            const result=await bicycleCollection.find().toArray()
+            // console.log(result);
+            res.send(result)
+        })
+
+        //(DELETE) DELETE product From Manage All Product
+    app.delete("/deleteservice/:id",verifyJWT,verifyAdmin, async (req, res) => {
+        const productId = req.params.id;
+        console.log(productId);
+        const query = { _id: ObjectId(productId) };
+        const result = await bicycleCollection.deleteOne(query);
+        res.json(result);
+      });
     }
     finally {
 
