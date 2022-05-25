@@ -192,7 +192,7 @@ async function run() {
           })
       
           //(GET)Get all User
-          app.get("/user", async (req, res) => {
+          app.get("/user",verifyJWT,verifyAdmin, async (req, res) => {
             const cursor = userCollection.find();
             const result = await cursor.toArray();
             res.json(result);
