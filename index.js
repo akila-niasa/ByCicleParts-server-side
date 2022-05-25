@@ -178,16 +178,16 @@ async function run() {
 
         
         //   (PUT)Put For Update or save profile
-        app.put('/user/:email', async(req, res) =>{
+        app.put('/userprofile/:email', async(req, res) =>{
             const email = req.params.email;
             const user = req.body;
             const filter = { email: email };
-            const options = { upsert: true };
+            // const options = { upsert: true };
             const updatedDoc = {
               $set:
                user
             }
-            const updatedUser = await userCollection.updateOne(filter, updatedDoc,options);
+            const updatedUser = await userCollection.updateOne(filter, updatedDoc);
             res.send(updatedUser);
           })
       
