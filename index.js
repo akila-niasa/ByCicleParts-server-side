@@ -50,7 +50,7 @@ async function run() {
         // VerifyAdmin
         const verifyAdmin=async(req,res,next)=>{
             const requester=req.decoded.email
-            console.log(requester);
+            // console.log(requester);
             const requestAccount=await userCollection.findOne({email:requester})
             if (requestAccount.role==='admin'){
               next();
@@ -108,7 +108,6 @@ async function run() {
                 const query = { client: email };
                 const cursor = orderCollection.find(query);
                 const result = await cursor.toArray();
-                console.log(result);
                 return res.json(result);
             } else {
 
@@ -129,7 +128,6 @@ async function run() {
          //(POST) Post A Review 
     app.post("/review", async (req, res) => {
         reviewDetails = req.body;
-        console.log(reviewDetails);
         const result = await reviewCollection.insertOne(reviewDetails);
         res.json(result);
       });
@@ -202,14 +200,12 @@ async function run() {
 
         //   (PUT)Put For Make an admin
           app.put('/user/admin/:email',verifyJWT,async(req,res)=>{
-            const email=req.params.email
-
-                const filter={email:email}
+            const email=req.params.email;
+                const filter={email:email};
                 const updateDoc = {
                     $set:{role:'admin'},
                   };
                   const result = await userCollection.updateOne(filter, updateDoc);
-                //   console.log(result);
              res.send(result);
             
         })
@@ -224,27 +220,55 @@ async function run() {
 
         // (POST)Post For Add Product
         app.post('/addservice',verifyJWT,verifyAdmin,async(req,res)=>{
-            const product=req.body
-            const result=await bicycleCollection.insertOne(product)
-            res.send(result)
+            const product=req.body;
+            const result=await bicycleCollection.insertOne(product);
+            res.send(result);
         })
 
         // (GET)Get For Manage All Product
         app.get('/manageservice',verifyJWT,verifyAdmin,async(req,res)=>{
-           
-            const result=await bicycleCollection.find().toArray()
-            // console.log(result);
-            res.send(result)
+            const result=await bicycleCollection.find().toArray();
+            res.send(result);
         })
 
         //(DELETE) DELETE product From Manage All Product
     app.delete("/deleteservice/:id",verifyJWT,verifyAdmin, async (req, res) => {
         const productId = req.params.id;
-        console.log(productId);
         const query = { _id: ObjectId(productId) };
         const result = await bicycleCollection.deleteOne(query);
         res.json(result);
       });
+
+    //   (GET)Get All Orders For Admin
+      app.get('/manageorders',verifyJWT,verifyAdmin,async(req,res)=>{
+        const result = await orderCollection.find().toArray();
+        res.send(result);
+      })
+
+        //(PUT) Update Order Status
+        app.put("/manageorders/:id",verifyJWT,verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const updateStatus=req.body.status
+            // console.log(updateStatus);
+            const query = { _id: ObjectId(id) };
+            const updateDoc = {
+              $set: {
+                status:updateStatus,
+              },
+            };
+            // console.log(updateDoc);
+            const result = await orderCollection.updateOne(query, updateDoc);
+            res.send(result);
+          });
+
+          //(DELETE) DELETE Order
+        app.delete("/manageorder/:id", async (req, res) => {
+            const productId = req.params.id;
+            // console.log(productId);
+            const query = { _id: ObjectId(productId) };
+            const result = await orderCollection.deleteOne(query);
+            res.json(result);
+        });
     }
     finally {
 
