@@ -1,5 +1,5 @@
 # BiCycle Parts 
-[https://fast-spire-01070.herokuapp.com/](https://fast-spire-01070.herokuapp.com//)
+[https://fast-spire-01070.herokuapp.com](https://fast-spire-01070.herokuapp.com/)
 
 ## Api Links
 
