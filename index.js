@@ -278,6 +278,6 @@ run().catch(console.dir)
 
 
 app.get('/', (req, res) => {
-    res.send('Welcome to Side')
+    res.send('Welcome to my Side')
 })
-app.listen(port, () => { console.log('CURD is running', port) })
+app.listen(port, () => { console.log('CURD is run', port) })
